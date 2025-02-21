@@ -81,8 +81,6 @@ export const WorkflowEditActionFormServerlessFunction = ({
 }: WorkflowEditActionFormServerlessFunctionProps) => {
   const theme = useTheme();
   const { getIcon } = useIcons();
-  const [shouldBuildServerlessFunction, setShouldBuildServerlessFunction] =
-    useState(false);
   const serverlessFunctionId = action.settings.input.serverlessFunctionId;
   const serverlessFunctionVersion =
     action.settings.input.serverlessFunctionVersion;
@@ -123,14 +121,12 @@ export const WorkflowEditActionFormServerlessFunction = ({
     });
   };
 
-  const { testServerlessFunction, isTesting, isBuilding } =
-    useTestServerlessFunction({
-      serverlessFunctionId,
-      callback: updateOutputSchemaFromTestResult,
-    });
+  const { testServerlessFunction, isTesting } = useTestServerlessFunction({
+    serverlessFunctionId,
+    callback: updateOutputSchemaFromTestResult,
+  });
 
   const handleSave = useDebouncedCallback(async () => {
-    setShouldBuildServerlessFunction(true);
     await updateOneServerlessFunction({
       name: formValues.name,
       description: formValues.description,
@@ -217,6 +213,10 @@ export const WorkflowEditActionFormServerlessFunction = ({
   };
 
   const handleTestInputChange = async (value: any, path: string[]) => {
+    if (actionOptions.readonly === true) {
+      return;
+    }
+
     const updatedTestFunctionInput = setNestedValue(
       serverlessFunctionTestData.input,
       path,
@@ -229,9 +229,12 @@ export const WorkflowEditActionFormServerlessFunction = ({
   };
 
   const handleRunFunction = async () => {
+    if (actionOptions.readonly === true) {
+      return;
+    }
+
     if (!isTesting) {
-      await testServerlessFunction(shouldBuildServerlessFunction);
-      setShouldBuildServerlessFunction(false);
+      await testServerlessFunction();
     }
   };
 
@@ -302,6 +305,7 @@ export const WorkflowEditActionFormServerlessFunction = ({
           iconColor={theme.color.orange}
           initialTitle={headerTitle}
           headerType="Code"
+          disabled={actionOptions.readonly}
         />
         <WorkflowStepBody>
           {activeTabId === 'code' && (
@@ -333,12 +337,12 @@ export const WorkflowEditActionFormServerlessFunction = ({
               <WorkflowEditActionFormServerlessFunctionFields
                 functionInput={serverlessFunctionTestData.input}
                 onInputChange={handleTestInputChange}
+                readonly={actionOptions.readonly}
               />
               <StyledCodeEditorContainer>
                 <InputLabel>Result</InputLabel>
                 <ServerlessFunctionExecutionResult
                   serverlessFunctionTestData={serverlessFunctionTestData}
-                  isBuilding={isBuilding}
                   isTesting={isTesting}
                 />
               </StyledCodeEditorContainer>
@@ -351,7 +355,7 @@ export const WorkflowEditActionFormServerlessFunction = ({
               <CmdEnterActionButton
                 title="Test"
                 onClick={handleRunFunction}
-                disabled={isTesting || isBuilding}
+                disabled={isTesting || actionOptions.readonly}
               />,
             ]}
           />

@@ -2,6 +2,7 @@ import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSi
 import { isWorkflowSubObjectMetadata } from '@/object-metadata/utils/isWorkflowSubObjectMetadata';
 import { isFieldActor } from '@/object-record/record-field/types/guards/isFieldActor';
 import { isFieldRichText } from '@/object-record/record-field/types/guards/isFieldRichText';
+import { isFieldRichTextV2 } from '@/object-record/record-field/types/guards/isFieldRichTextV2';
 import { isDefined } from 'twenty-shared';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
 
@@ -11,6 +12,7 @@ type isFieldValueReadOnlyParams = {
   fieldType?: FieldMetadataType;
   isObjectRemote?: boolean;
   isRecordDeleted?: boolean;
+  hasObjectReadOnlyPermission?: boolean;
 };
 
 export const isFieldValueReadOnly = ({
@@ -19,6 +21,7 @@ export const isFieldValueReadOnly = ({
   fieldType,
   isObjectRemote = false,
   isRecordDeleted = false,
+  hasObjectReadOnlyPermission = false,
 }: isFieldValueReadOnlyParams) => {
   if (fieldName === 'noteTargets' || fieldName === 'taskTargets') {
     return true;
@@ -29,6 +32,10 @@ export const isFieldValueReadOnly = ({
   }
 
   if (isRecordDeleted) {
+    return true;
+  }
+
+  if (hasObjectReadOnlyPermission) {
     return true;
   }
 
@@ -49,7 +56,9 @@ export const isFieldValueReadOnly = ({
 
   if (
     isDefined(fieldType) &&
-    (isFieldActor({ type: fieldType }) || isFieldRichText({ type: fieldType }))
+    (isFieldActor({ type: fieldType }) ||
+      isFieldRichText({ type: fieldType }) ||
+      isFieldRichTextV2({ type: fieldType }))
   ) {
     return true;
   }

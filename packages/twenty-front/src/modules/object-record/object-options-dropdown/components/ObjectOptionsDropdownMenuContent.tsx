@@ -15,6 +15,7 @@ import {
 import { useObjectNamePluralFromSingular } from '@/object-metadata/hooks/useObjectNamePluralFromSingular';
 import { useHandleToggleTrashColumnFilter } from '@/object-record/record-index/hooks/useHandleToggleTrashColumnFilter';
 
+import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
 import { useObjectOptionsForBoard } from '@/object-record/object-options-dropdown/hooks/useObjectOptionsForBoard';
 import { useOptionsDropdown } from '@/object-record/object-options-dropdown/hooks/useOptionsDropdown';
 import { recordGroupFieldMetadataComponentState } from '@/object-record/record-group/states/recordGroupFieldMetadataComponentState';
@@ -31,7 +32,9 @@ import { useScopedHotkeys } from '@/ui/utilities/hotkey/hooks/useScopedHotkeys';
 import { useRecoilComponentValueV2 } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValueV2';
 import { useGetCurrentView } from '@/views/hooks/useGetCurrentView';
 import { ViewType } from '@/views/types/ViewType';
+import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { isDefined } from 'twenty-shared';
+import { FeatureFlagKey } from '~/generated-metadata/graphql';
 
 export const ObjectOptionsDropdownMenuContent = () => {
   const {
@@ -93,13 +96,22 @@ export const ObjectOptionsDropdownMenuContent = () => {
     viewType,
   });
 
+  // TODO: Remove this once we have implemented Rich Text v2 and removed the old rich text
+  const canImportOrExport =
+    objectMetadataItem.nameSingular !== CoreObjectNameSingular.Note &&
+    objectMetadataItem.nameSingular !== CoreObjectNameSingular.Task;
+
+  const isCommandMenuV2Enabled = useIsFeatureEnabled(
+    FeatureFlagKey.IsCommandMenuV2Enabled,
+  );
+
   return (
     <>
       <DropdownMenuHeader StartIcon={CurrentViewIcon ?? IconList}>
         {currentView?.name}
       </DropdownMenuHeader>
-      {/** TODO: Should be removed when view settings contains more options */}
-      {viewType === ViewType.Kanban && (
+
+      {(isCommandMenuV2Enabled || viewType === ViewType.Kanban) && (
         <>
           <DropdownMenuItemsContainer scrollable={false}>
             <MenuItem
@@ -112,6 +124,7 @@ export const ObjectOptionsDropdownMenuContent = () => {
           <DropdownMenuSeparator />
         </>
       )}
+
       <DropdownMenuItemsContainer scrollable={false}>
         <MenuItem
           onClick={() => onContentChange('fields')}
@@ -151,16 +164,23 @@ export const ObjectOptionsDropdownMenuContent = () => {
       </DropdownMenuItemsContainer>
       <DropdownMenuSeparator />
       <DropdownMenuItemsContainer>
-        <MenuItem
-          onClick={download}
-          LeftIcon={IconFileExport}
-          text={displayedExportProgress(progress)}
-        />
-        <MenuItem
-          onClick={() => openObjectRecordsSpreasheetImportDialog()}
-          LeftIcon={IconFileImport}
-          text="Import"
-        />
+        {canImportOrExport && (
+          <>
+            <MenuItem
+              onClick={download}
+              LeftIcon={IconFileExport}
+              text={displayedExportProgress(progress)}
+            />
+            <MenuItem
+              onClick={() => {
+                closeDropdown();
+                openObjectRecordsSpreasheetImportDialog();
+              }}
+              LeftIcon={IconFileImport}
+              text="Import"
+            />
+          </>
+        )}
         <MenuItem
           onClick={() => {
             handleToggleTrashColumnFilter();

@@ -1,13 +1,12 @@
-import { ConnectedAccountProvider } from 'twenty-shared';
 import { ThemeColor } from 'twenty-ui';
 
 import { RATING_VALUES } from '@/object-record/record-field/meta-types/constants/RatingValues';
 import { ZodHelperLiteral } from '@/object-record/record-field/types/ZodHelperLiteral';
 import { RecordForSelect } from '@/object-record/relation-picker/types/RecordForSelect';
-
+import { ConnectedAccountProvider } from 'twenty-shared';
+import * as z from 'zod';
 import { RelationDefinitionType } from '~/generated-metadata/graphql';
 import { CurrencyCode } from './CurrencyCode';
-
 export type FieldUuidMetadata = {
   objectMetadataNameSingular?: string;
   fieldName: string;
@@ -128,6 +127,12 @@ export type FieldRawJsonMetadata = {
   settings?: null;
 };
 
+export type FieldRichTextV2Metadata = {
+  objectMetadataNameSingular?: string;
+  fieldName: string;
+  settings?: null;
+};
+
 export type FieldRichTextMetadata = {
   objectMetadataNameSingular?: string;
   fieldName: string;
@@ -212,7 +217,9 @@ export type FieldMetadata =
   | FieldAddressMetadata
   | FieldActorMetadata
   | FieldArrayMetadata
-  | FieldTsVectorMetadata;
+  | FieldTsVectorMetadata
+  | FieldRichTextV2Metadata
+  | FieldRichTextMetadata;
 
 export type FieldTextValue = string;
 export type FieldUUidValue = string; // TODO: can we replace with a template literal type, or maybe overkill ?
@@ -264,16 +271,37 @@ export type FieldRelationValue<
 export type Json = ZodHelperLiteral | { [key: string]: Json } | Json[];
 export type FieldJsonValue = Record<string, Json> | Json[] | null;
 
+export type FieldRichTextV2Value = {
+  blocknote: string | null;
+  markdown: string | null;
+};
+
 export type FieldRichTextValue = null | string;
 
-export type FieldActorValue = {
-  source: string;
-  workspaceMemberId?: string;
-  name: string;
-  context?: {
-    provider?: ConnectedAccountProvider;
-  };
-};
+const FieldActorSourceSchema = z.union([
+  z.literal('API'),
+  z.literal('IMPORT'),
+  z.literal('EMAIL'),
+  z.literal('CALENDAR'),
+  z.literal('MANUAL'),
+  z.literal('SYSTEM'),
+  z.literal('WORKFLOW'),
+]);
+
+export const FieldActorValueSchema = z.object({
+  source: FieldActorSourceSchema,
+  workspaceMemberId: z.string().nullable(),
+  name: z.string(),
+  context: z.object({
+    provider: z.nativeEnum(ConnectedAccountProvider).optional(),
+  }),
+});
+export type FieldActorValue = z.infer<typeof FieldActorValueSchema>;
+
+export type FieldActorForInputValue = Pick<
+  FieldActorValue,
+  'context' | 'source'
+>;
 
 export type FieldArrayValue = string[];
 

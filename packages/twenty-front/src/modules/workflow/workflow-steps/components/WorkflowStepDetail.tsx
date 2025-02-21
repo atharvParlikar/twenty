@@ -1,17 +1,14 @@
-import {
-  WorkflowAction,
-  WorkflowTrigger,
-  WorkflowVersion,
-} from '@/workflow/types/Workflow';
+import { WorkflowAction, WorkflowTrigger } from '@/workflow/types/Workflow';
 import { assertUnreachable } from '@/workflow/utils/assertUnreachable';
 import { getStepDefinitionOrThrow } from '@/workflow/utils/getStepDefinitionOrThrow';
 import { WorkflowEditActionFormCreateRecord } from '@/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionFormCreateRecord';
 import { WorkflowEditActionFormDeleteRecord } from '@/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionFormDeleteRecord';
+import { WorkflowEditActionFormFindRecords } from '@/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionFormFindRecords';
 import { WorkflowEditActionFormSendEmail } from '@/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionFormSendEmail';
 import { WorkflowEditActionFormUpdateRecord } from '@/workflow/workflow-steps/workflow-actions/components/WorkflowEditActionFormUpdateRecord';
+import { WorkflowEditTriggerCronForm } from '@/workflow/workflow-trigger/components/WorkflowEditTriggerCronForm';
 import { WorkflowEditTriggerDatabaseEventForm } from '@/workflow/workflow-trigger/components/WorkflowEditTriggerDatabaseEventForm';
 import { WorkflowEditTriggerManualForm } from '@/workflow/workflow-trigger/components/WorkflowEditTriggerManualForm';
-import { WorkflowEditTriggerCronForm } from '@/workflow/workflow-trigger/components/WorkflowEditTriggerCronForm';
 import { Suspense, lazy } from 'react';
 import { isDefined } from 'twenty-shared';
 import { RightDrawerSkeletonLoader } from '~/loading/components/RightDrawerSkeletonLoader';
@@ -24,30 +21,34 @@ const WorkflowEditActionFormServerlessFunction = lazy(() =>
   })),
 );
 
-type WorkflowStepDetailProps =
+type WorkflowStepDetailProps = {
+  stepId: string;
+  trigger: WorkflowTrigger | null;
+  steps: Array<WorkflowAction> | null;
+} & (
   | {
-      stepId: string;
-      workflowVersion: WorkflowVersion;
       readonly: true;
       onTriggerUpdate?: undefined;
       onActionUpdate?: undefined;
     }
   | {
       stepId: string;
-      workflowVersion: WorkflowVersion;
       readonly?: false;
       onTriggerUpdate: (trigger: WorkflowTrigger) => void;
       onActionUpdate: (action: WorkflowAction) => void;
-    };
+    }
+);
 
 export const WorkflowStepDetail = ({
   stepId,
-  workflowVersion,
+  trigger,
+  steps,
   ...props
 }: WorkflowStepDetailProps) => {
   const stepDefinition = getStepDefinitionOrThrow({
     stepId,
-    workflowVersion,
+    trigger,
+    steps,
   });
   if (!isDefined(stepDefinition) || !isDefined(stepDefinition.definition)) {
     return null;
@@ -132,6 +133,16 @@ export const WorkflowStepDetail = ({
         case 'DELETE_RECORD': {
           return (
             <WorkflowEditActionFormDeleteRecord
+              key={stepId}
+              action={stepDefinition.definition}
+              actionOptions={props}
+            />
+          );
+        }
+
+        case 'FIND_RECORDS': {
+          return (
+            <WorkflowEditActionFormFindRecords
               key={stepId}
               action={stepDefinition.definition}
               actionOptions={props}

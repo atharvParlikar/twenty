@@ -44,6 +44,7 @@ import { getTimeFormatFromWorkspaceTimeFormat } from '@/localization/utils/getTi
 import { currentUserState } from '../states/currentUserState';
 import { tokenPairState } from '../states/tokenPairState';
 
+import { currentUserWorkspaceState } from '@/auth/states/currentUserWorkspaceState';
 import {
   SignInUpStep,
   signInUpStepState,
@@ -60,9 +61,10 @@ import { useRedirectToWorkspaceDomain } from '@/domain-manager/hooks/useRedirect
 import { domainConfigurationState } from '@/domain-manager/states/domainConfigurationState';
 import { isAppWaitingForFreshObjectMetadataState } from '@/object-metadata/states/isAppWaitingForFreshObjectMetadataState';
 import { workspaceAuthProvidersState } from '@/workspace/states/workspaceAuthProvidersState';
+import { i18n } from '@lingui/core';
 import { useSearchParams } from 'react-router-dom';
-import { dynamicActivate } from '~/utils/i18n/dynamicActivate';
 import { getWorkspaceUrl } from '~/utils/getWorkspaceUrl';
+import { dynamicActivate } from '~/utils/i18n/dynamicActivate';
 
 export const useAuth = () => {
   const setTokenPair = useSetRecoilState(tokenPairState);
@@ -70,6 +72,7 @@ export const useAuth = () => {
   const setCurrentWorkspaceMember = useSetRecoilState(
     currentWorkspaceMemberState,
   );
+  const setCurrentUserWorkspace = useSetRecoilState(currentUserWorkspaceState);
   const setIsAppWaitingForFreshObjectMetadataState = useSetRecoilState(
     isAppWaitingForFreshObjectMetadataState,
   );
@@ -254,6 +257,10 @@ export const useAuth = () => {
       setCurrentWorkspaceMembers(workspaceMembers);
     }
 
+    if (isDefined(user.currentUserWorkspace)) {
+      setCurrentUserWorkspace(user.currentUserWorkspace);
+    }
+
     if (isDefined(user.workspaceMember)) {
       workspaceMember = {
         ...user.workspaceMember,
@@ -317,6 +324,7 @@ export const useAuth = () => {
     getCurrentUser,
     isOnAWorkspace,
     setCurrentUser,
+    setCurrentUserWorkspace,
     setCurrentWorkspace,
     setCurrentWorkspaceMember,
     setCurrentWorkspaceMembers,
@@ -391,6 +399,7 @@ export const useAuth = () => {
           workspaceInviteHash,
           workspacePersonalInviteToken,
           captchaToken,
+          locale: i18n.locale ?? 'en',
           ...(workspacePublicData?.id
             ? { workspaceId: workspacePublicData.id }
             : {}),
@@ -453,7 +462,7 @@ export const useAuth = () => {
     ) => {
       const url = new URL(`${REACT_APP_SERVER_BASE_URL}${path}`);
       if (isDefined(params.workspaceInviteHash)) {
-        url.searchParams.set('inviteHash', params.workspaceInviteHash);
+        url.searchParams.set('workspaceInviteHash', params.workspaceInviteHash);
       }
       if (isDefined(params.workspacePersonalInviteToken)) {
         url.searchParams.set(

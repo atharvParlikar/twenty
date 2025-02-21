@@ -55,6 +55,13 @@ export type WorkflowDeleteRecordActionSettings = BaseWorkflowActionSettings & {
   };
 };
 
+export type WorkflowFindRecordsActionSettings = BaseWorkflowActionSettings & {
+  input: {
+    objectName: string;
+    limit?: number;
+  };
+};
+
 type BaseWorkflowAction = {
   id: string;
   name: string;
@@ -86,12 +93,18 @@ export type WorkflowDeleteRecordAction = BaseWorkflowAction & {
   settings: WorkflowDeleteRecordActionSettings;
 };
 
+export type WorkflowFindRecordsAction = BaseWorkflowAction & {
+  type: 'FIND_RECORDS';
+  settings: WorkflowFindRecordsActionSettings;
+};
+
 export type WorkflowAction =
   | WorkflowCodeAction
   | WorkflowSendEmailAction
   | WorkflowCreateRecordAction
   | WorkflowUpdateRecordAction
-  | WorkflowDeleteRecordAction;
+  | WorkflowDeleteRecordAction
+  | WorkflowFindRecordsAction;
 
 export type WorkflowActionType = WorkflowAction['type'];
 
@@ -175,8 +188,6 @@ export type WorkflowVersion = {
 
 type StepRunOutput = {
   id: string;
-  name: string;
-  type: string;
   outputs: {
     attemptCount: number;
     result: object | undefined;
@@ -184,8 +195,14 @@ type StepRunOutput = {
   }[];
 };
 
+export type WorkflowRunOutputStepsOutput = Record<string, StepRunOutput>;
+
 export type WorkflowRunOutput = {
-  steps: Record<string, StepRunOutput>;
+  flow: {
+    trigger: WorkflowTrigger;
+    steps: WorkflowAction[];
+  };
+  stepsOutput?: WorkflowRunOutputStepsOutput;
   error?: string;
 };
 
@@ -193,7 +210,7 @@ export type WorkflowRun = {
   __typename: 'WorkflowRun';
   id: string;
   workflowVersionId: string;
-  output: WorkflowRunOutput;
+  output: WorkflowRunOutput | null;
 };
 
 export type Workflow = {

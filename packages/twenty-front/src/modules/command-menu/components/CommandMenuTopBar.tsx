@@ -1,6 +1,7 @@
 import { CommandMenuContextChip } from '@/command-menu/components/CommandMenuContextChip';
 import { CommandMenuContextChipGroups } from '@/command-menu/components/CommandMenuContextChipGroups';
 import { CommandMenuContextChipGroupsWithRecordSelection } from '@/command-menu/components/CommandMenuContextChipGroupsWithRecordSelection';
+import { CommandMenuTopBarInputFocusEffect } from '@/command-menu/components/CommandMenuTopBarInputFocusEffect';
 import { COMMAND_MENU_SEARCH_BAR_HEIGHT } from '@/command-menu/constants/CommandMenuSearchBarHeight';
 import { COMMAND_MENU_SEARCH_BAR_PADDING } from '@/command-menu/constants/CommandMenuSearchBarPadding';
 import { useCommandMenu } from '@/command-menu/hooks/useCommandMenu';
@@ -8,13 +9,14 @@ import { commandMenuNavigationStackState } from '@/command-menu/states/commandMe
 import { commandMenuPageState } from '@/command-menu/states/commandMenuPageState';
 import { commandMenuSearchState } from '@/command-menu/states/commandMenuSearchState';
 import { CommandMenuPages } from '@/command-menu/types/CommandMenuPages';
-import { contextStoreCurrentObjectMetadataIdComponentState } from '@/context-store/states/contextStoreCurrentObjectMetadataIdComponentState';
+import { contextStoreCurrentObjectMetadataItemComponentState } from '@/context-store/states/contextStoreCurrentObjectMetadataItemComponentState';
 import { useRecoilComponentValueV2 } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValueV2';
 import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { useTheme } from '@emotion/react';
 import styled from '@emotion/styled';
 import { useLingui } from '@lingui/react/macro';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { isDefined } from 'twenty-shared';
 import {
@@ -79,10 +81,15 @@ const StyledCloseButtonContainer = styled.div`
   justify-content: center;
 `;
 
+const StyledCloseButtonWrapper = styled.div<{ isVisible: boolean }>`
+  visibility: ${({ isVisible }) => (isVisible ? 'visible' : 'hidden')};
+`;
+
 export const CommandMenuTopBar = () => {
   const [commandMenuSearch, setCommandMenuSearch] = useRecoilState(
     commandMenuSearchState,
   );
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { t } = useLingui();
 
@@ -94,8 +101,8 @@ export const CommandMenuTopBar = () => {
 
   const { closeCommandMenu, goBackFromCommandMenu } = useCommandMenu();
 
-  const contextStoreCurrentObjectMetadataId = useRecoilComponentValueV2(
-    contextStoreCurrentObjectMetadataIdComponentState,
+  const contextStoreCurrentObjectMetadataItem = useRecoilComponentValueV2(
+    contextStoreCurrentObjectMetadataItemComponentState,
   );
 
   const commandMenuPage = useRecoilValue(commandMenuPageState);
@@ -121,6 +128,11 @@ export const CommandMenuTopBar = () => {
       });
   }, [commandMenuNavigationStack, theme.icon.size.sm]);
 
+  const location = useLocation();
+  const isButtonVisible =
+    !location.pathname.startsWith('/objects/') &&
+    !location.pathname.startsWith('/object/');
+
   return (
     <StyledInputContainer>
       <StyledContentContainer>
@@ -135,11 +147,11 @@ export const CommandMenuTopBar = () => {
                 testId="command-menu-go-back-button"
               />
             )}
-            {isDefined(contextStoreCurrentObjectMetadataId) &&
+            {isDefined(contextStoreCurrentObjectMetadataItem) &&
             commandMenuPage !== CommandMenuPages.SearchRecords ? (
               <CommandMenuContextChipGroupsWithRecordSelection
                 contextChips={contextChips}
-                objectMetadataItemId={contextStoreCurrentObjectMetadataId}
+                objectMetadataItemId={contextStoreCurrentObjectMetadataItem.id}
               />
             ) : (
               <CommandMenuContextChipGroups contextChips={contextChips} />
@@ -148,16 +160,19 @@ export const CommandMenuTopBar = () => {
         )}
         {(commandMenuPage === CommandMenuPages.Root ||
           commandMenuPage === CommandMenuPages.SearchRecords) && (
-          <StyledInput
-            autoFocus
-            value={commandMenuSearch}
-            placeholder={t`Type anything`}
-            onChange={handleSearchChange}
-          />
+          <>
+            <StyledInput
+              ref={inputRef}
+              value={commandMenuSearch}
+              placeholder={t`Type anything`}
+              onChange={handleSearchChange}
+            />
+            <CommandMenuTopBarInputFocusEffect inputRef={inputRef} />
+          </>
         )}
       </StyledContentContainer>
       {!isMobile && (
-        <>
+        <StyledCloseButtonWrapper isVisible={isButtonVisible}>
           {isCommandMenuV2Enabled ? (
             <Button
               Icon={IconX}
@@ -179,7 +194,7 @@ export const CommandMenuTopBar = () => {
               />
             </StyledCloseButtonContainer>
           )}
-        </>
+        </StyledCloseButtonWrapper>
       )}
     </StyledInputContainer>
   );

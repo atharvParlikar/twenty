@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 
 import axios, { AxiosInstance } from 'axios';
 import uniqBy from 'lodash.uniqby';
-import { TWENTY_COMPANIES_BASE_URL } from 'twenty-shared';
+import {
+  ConnectedAccountProvider,
+  TWENTY_COMPANIES_BASE_URL,
+} from 'twenty-shared';
 import { DeepPartial, EntityManager, ILike } from 'typeorm';
 
 import { FieldActorSource } from 'src/engine/metadata-modules/field-metadata/composite-types/actor.composite-type';
@@ -18,6 +21,9 @@ type CompanyToCreate = {
   domainName: string | undefined;
   createdBySource: FieldActorSource;
   createdByWorkspaceMember?: WorkspaceMemberWorkspaceEntity | null;
+  createdByContext: {
+    provider: ConnectedAccountProvider;
+  };
 };
 
 @Injectable()
@@ -100,32 +106,6 @@ export class CreateCompanyService {
     };
   }
 
-  async createCompany(
-    company: CompanyToCreate,
-    workspaceId: string,
-    transactionManager?: EntityManager,
-  ): Promise<string> {
-    const companyRepository =
-      await this.twentyORMGlobalManager.getRepositoryForWorkspace(
-        workspaceId,
-        CompanyWorkspaceEntity,
-      );
-    let lastCompanyPosition = await this.getLastCompanyPosition(
-      companyRepository,
-      transactionManager,
-    );
-
-    const data = await this.prepareCompanyData(company, ++lastCompanyPosition);
-
-    const createdCompany = await companyRepository.save(
-      data,
-      undefined,
-      transactionManager,
-    );
-
-    return createdCompany.id;
-  }
-
   private async prepareCompanyData(
     company: CompanyToCreate,
     position: number,
@@ -146,6 +126,9 @@ export class CreateCompanyService {
         source: company.createdBySource,
         workspaceMemberId: company.createdByWorkspaceMember?.id,
         name: createdByName,
+        context: {
+          provider: company.createdByContext.provider,
+        },
       },
       address: {
         addressCity: city,

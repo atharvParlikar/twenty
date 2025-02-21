@@ -4,7 +4,7 @@ import { useWorkflowWithCurrentVersion } from '@/workflow/hooks/useWorkflowWithC
 import { renderHook } from '@testing-library/react';
 import { act } from 'react';
 import { FeatureFlagKey } from '~/generated-metadata/graphql';
-import { getJestMetadataAndApolloMocksAndActionMenuWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksAndContextStoreWrapper';
+import { getJestMetadataAndApolloMocksAndActionMenuWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksAndActionMenuWrapper';
 import { generatedMockObjectMetadataItems } from '~/testing/mock-data/generatedMockObjectMetadataItems';
 import { mockCurrentWorkspace } from '~/testing/mock-data/users';
 import { useDeactivateWorkflowSingleRecordAction } from '../useDeactivateWorkflowSingleRecordAction';
@@ -162,7 +162,6 @@ describe('useDeactivateWorkflowSingleRecordAction', () => {
 
     expect(deactivateWorkflowVersionMock).toHaveBeenCalledWith({
       workflowVersionId: activeWorkflowMock.currentVersion.id,
-      workflowId: activeWorkflowMock.id,
     });
   });
 });

@@ -10,7 +10,6 @@ import { MockedResponse } from '@apollo/client/testing';
 import gql from 'graphql-tag';
 import { getJestMetadataAndApolloMocksWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksWrapper';
 import { getPeopleMock } from '~/testing/mock-data/people';
-
 const recordTableId = 'people';
 const objectNameSingular = 'person';
 const onColumnsChange = jest.fn();
@@ -201,7 +200,7 @@ const mocks: MockedResponse[] = [
                         }
                       }
                       personId
-                      rocket {
+                      pet {
                         __typename
                         createdAt
                         createdBy {
@@ -216,7 +215,8 @@ const mocks: MockedResponse[] = [
                         position
                         updatedAt
                       }
-                      rocketId
+                      petId
+                      surveyResultId
                       updatedAt
                     }
                   }
@@ -361,7 +361,7 @@ const mocks: MockedResponse[] = [
                         }
                       }
                       personId
-                      rocket {
+                      pet {
                         __typename
                         createdAt
                         createdBy {
@@ -376,7 +376,8 @@ const mocks: MockedResponse[] = [
                         position
                         updatedAt
                       }
-                      rocketId
+                      petId
+                      surveyResultId
                       task {
                         __typename
                         assigneeId
